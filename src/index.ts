@@ -14,6 +14,7 @@ export type SessionOptions<O, D> = {
     sessionKeyFn: SessionKeyFunction;
     serializeHandler: SessionSaveHandler<O, D>; 
     deserializeHandler: SessionLoadHandler<O, D>;
+    forceRefreshFromDatabase: boolean;
 };
 
 function serialize<O, D>(data: O): D {
@@ -45,6 +46,7 @@ export const session = <C extends Context = Context, O extends {} = {}, D = O>(
         sessionKeyFn: getSessionKey,
         serializeHandler: serialize,
         deserializeHandler: deserialize,
+        forceRefreshFromDatabase: false,
         ...sessionOptions 
     };
 
@@ -54,9 +56,11 @@ export const session = <C extends Context = Context, O extends {} = {}, D = O>(
 
     return async (ctx: Context, next) => {
         const key = getKey(ctx);
-        const data: D = isNullOrUndefined(key) ? undefined : await loadSession(key);
 
-        ctx[sessionName] = isNullOrUndefined(data) ? undefined : await options.deserializeHandler(data);
+        if (!ctx[sessionName] || options.forceRefreshFromDatabase) {
+            const data: D = isNullOrUndefined(key) ? undefined : await loadSession(key);
+            ctx[sessionName] = isNullOrUndefined(data) ? undefined : await options.deserializeHandler(data);
+        }
 
         await next();
 
