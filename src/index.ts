@@ -32,12 +32,17 @@ type SessionDocument<D> = {
 
 export type SessionContext<K extends string, O extends {}> = Context & { [key in K]: O }
 
-export const session = <C extends Context = Context, O extends {} = {}, D = O>(
+export type Session = <C extends Context = Context, O extends {} = {}, D = O>(
+    db: Db, 
+    sessionOptions?: Partial<SessionOptions<O, D>>
+) => MiddlewareFn<C>;
+
+export const session: Session = <C extends Context = Context, O extends {} = {}, D = O>(
     db: Db, 
     sessionOptions?: Partial<SessionOptions<O, D>>
 ): MiddlewareFn<C> => {
     
-    const saveSession = (key: string, data: D): Promise<unknown> => collection.updateOne({ key }, { $set: { data } }, { upsert: true });
+    const saveSession = (key: string, data: D | undefined): Promise<unknown> => collection.updateOne({ key }, { $set: { data } }, { upsert: true });
     const loadSession = async (key: string): Promise<D | undefined> => (await collection.findOne({ key }))?.data ?? undefined;
 
     const options: SessionOptions<O, D> = { 
@@ -54,18 +59,21 @@ export const session = <C extends Context = Context, O extends {} = {}, D = O>(
     
     const { sessionKeyFn: getKey, sessionName } = options;
 
-    return async (ctx: Context, next) => {
+    return async (ctx: any, next) => {
         const key = getKey(ctx);
 
+        if (isNullOrUndefined(key))
+            return await next(); 
+
         if (!ctx[sessionName] || options.forceRefreshFromDatabase) {
-            const data: D = isNullOrUndefined(key) ? undefined : await loadSession(key);
+            const data: D | undefined = isNullOrUndefined(key) ? undefined : await loadSession(key);
             ctx[sessionName] = isNullOrUndefined(data) ? undefined : await options.deserializeHandler(data);
         }
 
         await next();
 
         if (ctx[sessionName] != null) {
-            const obj: O = ctx[sessionName];
+            const obj: O | undefined = ctx[sessionName];
             await saveSession(key, isNullOrUndefined(obj) ? undefined : await options.serializeHandler(obj));
         }
     };
