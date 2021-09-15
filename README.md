@@ -2,6 +2,14 @@
 
 MongoDB powered simple session middleware for [Telegraf 4.0](https://github.com/telegraf/telegraf) with TypeScript support.
 
+## Testimonials
+
+This is a fork from a great [telegraf-session-mongodb npm package](https://github.com/alexnzarov/telegraf-session-mongodb), slightly improved.
+The major changes are:
+* Ability to set custom session data serialization and deserialization handlers
+* Better typescript support
+* Fine control for session data load from database instead of looking into database every telegram update
+
 ## Installation
 
 ```js
