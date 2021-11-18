@@ -1,6 +1,8 @@
 import { isNullOrUndefined } from 'util';
+import debug from 'debug';
 import { Db } from 'mongodb';
 import { Context, MiddlewareFn } from 'telegraf';
+
 import { getSessionKey, SessionKeyFunction } from './keys';
 
 export type MaybePromise<T> = T | Promise<T>
@@ -65,14 +67,19 @@ export const session: Session = <C extends Context = Context, O extends {} = {},
         if (isNullOrUndefined(key))
             return await next(); 
 
+        if (!ctx[sessionName])
+            debug.log('session is empty');
+
         if (!ctx[sessionName] || options.forceRefreshFromDatabase) {
+            debug.log('loading session');
             const data: D | undefined = isNullOrUndefined(key) ? undefined : await loadSession(key);
             ctx[sessionName] = isNullOrUndefined(data) ? undefined : await options.deserializeHandler(data);
         }
 
         await next();
 
-        if (ctx[sessionName] != null) {
+        if (ctx[sessionName]) {
+            debug.log('saving session');
             const obj: O | undefined = ctx[sessionName];
             await saveSession(key, isNullOrUndefined(obj) ? undefined : await options.serializeHandler(obj));
         }
