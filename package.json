@@ -34,7 +34,7 @@
   "homepage": "https://github.com/aggtaa/telegraf-session-mongodb#readme",
   "dependencies": {
     "debug": "^4.3.2",
-    "mongodb": "4.1.1"
+    "mongodb": "4.2.0"
   },
   "devDependencies": {
     "@types/debug": "^4.1.7",
