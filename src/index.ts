@@ -72,7 +72,9 @@ export const session: Session = <C extends Context = Context, O extends {} = {},
 
         if (!ctx[sessionName] || options.forceRefreshFromDatabase) {
             debug.log('loading session');
-            const data: D | undefined = isNullOrUndefined(key) ? undefined : await loadSession(key);
+            let data: D | undefined = isNullOrUndefined(key) ? undefined : await loadSession(key);
+            if (isNullOrUndefined(data))
+                data = {} as D;
             ctx[sessionName] = isNullOrUndefined(data) ? undefined : await options.deserializeHandler(data);
         }
 
